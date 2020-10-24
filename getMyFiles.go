@@ -70,6 +70,11 @@ func copyMyFile(pathitem string, origin string, dest string, sha256 string) erro
 	fmt.Println("Copy from ", pathitem, "to", completeDest)
 	err := ensureDirExists(path.Dir(completeDest))
 
+	if err != nil {
+		fmt.Println("Failed to create directory :", path.Dir(completeDest))
+		return err
+	}
+
 	from, err := os.Open(pathitem)
 	if err != nil {
 		fmt.Println("Failed to open :", pathitem)
@@ -135,7 +140,7 @@ func main() {
 						fmt.Println("Failed to copy, wait 30s, Try #", cpt)
 						time.Sleep(30 * time.Second)
 					}
-					if cpt > 100 {
+					if cpt > 10 {
 						break
 					}
 					if err == nil {
