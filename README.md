@@ -8,8 +8,17 @@ And I'm trying goreleaser also.
 
 # Build
 
+
+## Linux 
+
 ```
 go build getMyFiles.go
+```
+
+## Windows
+
+```
+GOOS=windows GOARCH=386 go build -o getMyFiles.exe getMyFiles.go
 ```
 
 # Run
