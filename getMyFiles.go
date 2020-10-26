@@ -9,8 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -33,22 +33,22 @@ func calcSha256(file string) (string, error) {
 
 func creeFolder(dir string) error {
 	var err error
-	dirSplit := strings.Split(dir, "/")
+	dirSplit := strings.Split(dir, pathSeparator)
 	completeDir := ""
 
 	for _, value := range dirSplit {
 		if len(completeDir) == 0 {
 			completeDir = value
 		} else {
-			completeDir = fmt.Sprintf("%s/%s", completeDir, value)
+			completeDir = fmt.Sprintf("%s%s%s", completeDir, pathSeparator, value)
 		}
 
-		fmt.Println(completeDir)
+		fmt.Println("Create directory :", completeDir)
 
 		if _, err := os.Stat(completeDir); os.IsNotExist(err) {
 			errDir := os.MkdirAll(completeDir, 0755)
 			if errDir != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
@@ -66,18 +66,24 @@ func ensureDirExists(dir1 string) error {
 
 func copyMyFile(pathitem string, origin string, dest string, sha256 string) error {
 	var completeDest = pathitem
+	var completeOri = pathitem
 	completeDest = strings.ReplaceAll(completeDest, origin, dest)
+
+	//fmt.Println("completeDest=", completeDest)
+	//fmt.Println("completeOri=", completeOri)
+	//fmt.Println("filepath.Dir(completeDest)=", filepath.Dir(completeDest))
+
 	fmt.Println("Copy from ", pathitem, "to", completeDest)
-	err := ensureDirExists(path.Dir(completeDest))
+	err := ensureDirExists(filepath.Dir(completeDest))
 
 	if err != nil {
-		fmt.Println("Failed to create directory :", path.Dir(completeDest))
+		fmt.Println("Failed to create directory :", filepath.Dir(completeDest))
 		return err
 	}
 
-	from, err := os.Open(pathitem)
+	from, err := os.Open(completeOri)
 	if err != nil {
-		fmt.Println("Failed to open :", pathitem)
+		fmt.Println("Failed to open :", completeOri)
 		return err
 	}
 	defer from.Close()
@@ -87,7 +93,7 @@ func copyMyFile(pathitem string, origin string, dest string, sha256 string) erro
 		// dest exists, check if checksum are correct
 		newSha256, err := calcSha256(completeDest)
 		if sha256 == newSha256 {
-			fmt.Printf("%s already copied\n", pathitem)
+			fmt.Printf("%s already copied\n", completeDest)
 			return err
 		}
 	}
@@ -109,11 +115,27 @@ func copyMyFile(pathitem string, origin string, dest string, sha256 string) erro
 	if sha256 != newSha256 {
 		err = errors.New("checksum error : the checksum of the copied file is not the same as original")
 	}
+
+	fmt.Println("Successfully copied =>", completeDest)
 	return err
+}
+
+var pathSeparator = ""
+
+func initPathSeparator() {
+	OS := runtime.GOOS
+	fmt.Println("OS: ", OS)
+
+	if OS == "windows" {
+		pathSeparator = "\\"
+	} else {
+		pathSeparator = "/"
+	}
 }
 
 func main() {
 	var origin, dest string
+	initPathSeparator()
 
 	flag.StringVar(&origin, "o", ".", "Origin folder")
 	flag.StringVar(&dest, "d", ".", "Destination folder")
@@ -130,7 +152,7 @@ func main() {
 			var sha256 string
 			var cpt int
 
-			//fmt.Println(pathitem, info.Size(), info.IsDir(), path.Base(pathitem), path.Dir(pathitem))
+			//fmt.Println(pathitem, info.Size(), info.IsDir(), path.Base(pathitem), filepath.Dir(pathitem))
 			if !info.IsDir() {
 				for {
 					sha256, _ = calcSha256(pathitem)
