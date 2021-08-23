@@ -133,14 +133,27 @@ func initPathSeparator() {
 	}
 }
 
+var version string = "development"
+
+func printVersion() {
+	fmt.Println(version)
+}
+
 func main() {
 	var origin, dest string
+	var vOption bool
 	initPathSeparator()
 
 	flag.StringVar(&origin, "o", ".", "Origin folder")
 	flag.StringVar(&dest, "d", ".", "Destination folder")
+	flag.BoolVar(&vOption, "v", false, "Get version")
 	flag.Parse()
 	// fmt.Println(origin, dest)
+
+	if vOption {
+		printVersion()
+		os.Exit(0)
+	}
 
 	_, err := ioutil.ReadDir(origin)
 	if err != nil {
